@@ -42,16 +42,20 @@ def get_discourse(jsn, r, maxlen):
     second element is a vector stands for their 
     label (one hot)
     """
-    words1 = get_words(None, jsn["Arg1"]["Lemma"])
-    words2 = get_words(None, jsn["Arg2"]["Lemma"])
+    words1 = get_words(None, tmp = jsn["Arg1"]["Lemma"])
+    words2 = get_words(None, tmp = jsn["Arg2"]["Lemma"])
     idx1 = []
     idx2 = []
     for word in words1:
         idx1.append(r.word2idx(word))
+    if len(idx1) > maxlen:
+        print len(idx1)
     while len(idx1) < maxlen:
         idx1.append(0)
     for word in words2:
         idx2.append(r.word2idx(word))
+    if len(idx2) > maxlen:
+        print len(idx2)
     while len(idx2) < maxlen:
         idx2.append(0)
     i = [idx1, idx2]
@@ -71,12 +75,12 @@ def get_words(jsn, tmp = None, to_lower = False):
         tmp = jsn["Arg1"]["Lemma"] + jsn["Arg2"]["Lemma"]
     words = []
     for word in tmp:
-        word = word.split(u"\u00a0")
-        for w in word:
-            if not to_lower:
-                words.append(w.strip())
-            else:
-                words.append(w.strip().lower())
+        if u"\u00a0" in word:
+            word = "NULL"
+        if not to_lower:
+            words.append(word.strip())
+        else:
+            words.append(word.strip().lower())
     return words
 
 
@@ -170,7 +174,7 @@ class Reader(object):
 if __name__ == '__main__':
     conf = {
         "train_file": "train_pdtb_imp.json",
-        "vocab_file": "vocab",
+        "vocab_file": "data/vocab",
         "test_file": "",
         "valid_file": "",
         "vocab_size": 100000,

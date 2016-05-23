@@ -50,3 +50,7 @@ utils
 
 ## 实验
 ### 第一版：双Embedding-CNN结构
+
+### 第二版：双LSTM结构：时序太长了，训练不下来
+
+### 第二.1版：Embedding-CNN-LSTM

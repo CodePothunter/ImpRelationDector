@@ -2,7 +2,7 @@
 # -*- coding:utf8 -*-
 
 from utils.reader import Reader
-from utils.nn import CNN
+from utils.nn import CNN, CnnLstm
 
 import numpy as np
 
@@ -12,18 +12,19 @@ import numpy as np
 
 conf = {
     "vocab_size": 100000,
-    "maxlen": 450,
+    "maxlen": 420,
     "batch_size": 30,
     "embedding_dims": 100,
     "nb_filter": 250,
     "filter_length":3,
+    "pool_length":2,
     "hidden_size": 300,
     "nb_epoch": 10,
     "dropout": 0.5, 
-    "train_file": "train_pdtb_imp.json",
-    "vocab_file": "vocab",
+    "train_file": "data/train_pdtb_imp.json",
+    "vocab_file": "data/vocab",
     "test_file": "",
-    "valid_file": "dev_pdtb_imp.json",
+    "valid_file": "data/dev_pdtb_imp.json",
     "vocab_size": 100000,
 }
 
@@ -48,11 +49,12 @@ for i in xrange(len(reader.valid)):
 
 features = [np.array(features[0]), np.array(features[1])]
 targets = np.array(targets)
+print features[0].shape, features[1].shape
 v_features = [np.array(v_features[0]), np.array(v_features[1])]
 v_targets = np.array(v_targets)
 
-cnn = CNN(conf)
-cnn.build_net()
-cnn.train(features, targets, v_features, v_targets)
+cnnlstm = CnnLstm(conf)
+cnnlstm.build_net()
+cnnlstm.train(features, targets, v_features, v_targets)
 # cnn.save()
 
