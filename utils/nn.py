@@ -135,8 +135,8 @@ class CnnLstm(object):
         self.hs = conf["hidden_size"]
         self.ep = conf["nb_epoch"]
         self.pl = conf["pool_length"]
-        self.sm = conf.get("save_model", "models/default.milstm")
-        self.lm = conf.get("load_model", "models/default.milstm")
+        self.sm = conf.get("save_model", "models/default.cnnlstm")
+        self.lm = conf.get("load_model", "models/default.cnnlstm")
         self.do = conf.get("dropout",0.2)
         self.model = Sequential()
 
