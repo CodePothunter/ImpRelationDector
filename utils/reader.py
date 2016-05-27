@@ -2,7 +2,7 @@
 # -*- coding:utf8 -*-
 
 import json
-label2idx = {"Instantiation":0,"Synchrony":1,"Pragmatic cause":2,"List":3,"Asynchronous":4,"Restatement":5,"Concession":6,"Conjunction":7,"Cause":8,"Alternative":9,"Contrast":10}
+label2idx = {"Instantiation":0,"Synchrony":1,"Pragmatic cause":2,"List":3,"Asynchronous":4,"Restatement":5,"Concession":6,"Conjunction":7,"Cause":8,"Alternative":9,"Contrast":10, "Other":11}
 
 def set_vocab(file, vocab_size):
     vocab_dict = {}
@@ -35,7 +35,7 @@ def get_labels(label_seg):
         labels.add(label.split(".")[-1])
     return labels
 
-def get_discourse(jsn, r, maxlen):
+def get_discourse(jsn, r, maxlen, train=False):
     """
     return a list containint a pair where the first
     element is a pair of two subsentences and the 
@@ -60,13 +60,25 @@ def get_discourse(jsn, r, maxlen):
         idx2.append(0)
     i = [idx1, idx2]
     labels = []
-    for label in jsn["Sense"]:
-        labels.append(label2idx[label.split(".")[-1]])
-    o = [0]*11
-    for label_idx in labels:
-        o[label_idx] = 1
-    io = [i, o]
-    return io
+    if jsn["Type"] == "Implicit":
+        for label in jsn["Sense"]:
+            labels.append(label2idx[label.split(".")[-1]])
+    else:
+        labels.append(label2idx["Other"])
+    if train != True:
+        o = [0]*12
+        for label_idx in labels:
+            o[label_idx] = 1
+        io = [i, o]
+        return io
+    else:
+        io_list = []
+        for label_idx in labels:
+            o = [0] * 12
+            o[label_idx] = 1
+            io = [i, o]
+            io_list.append(io)
+        return io_list
 
 
 
@@ -149,6 +161,7 @@ class Reader(object):
         self.ml = conf['maxlen']
         self.train = []
         self.valid = []
+        self.valid_im = []
         self.vocab = Vocab(conf)
         self.vocab.read_vocab()
 
@@ -157,17 +170,29 @@ class Reader(object):
         line = f.readline()
         while line != "":
             jsn = json.loads(line)
-            self.train.append(get_discourse(jsn, self.vocab, self.ml))
+            gd = get_discourse(jsn, self.vocab, self.ml, train=True)
+            for item in gd:
+                self.train.append(item)
             line = f.readline()
         print "training data ready..."
         return self.train
 
-    def get_full_valid_data(self):
+    def get_full_valid_data(self, get_id=False):
         f = open(self.valid_file, "r")
         line = f.readline()
         while line != "":
             jsn = json.loads(line)
-            self.valid.append(get_discourse(jsn, self.vocab, self.ml))
+            idl = jsn["ID"]
+            gd = get_discourse(jsn, self.vocab, self.ml)
+            if get_id:
+                self.valid.append((idl, gd))
+            else:
+                self.valid.append(gd)
+            if jsn["Type"] == "Implicit":
+                if get_id:
+                    self.valid_im.append((idl, gd))   
+                else:
+                    self.valid_im.append(gd)
             line = f.readline()
         print "validation data ready..."
         return self.valid
