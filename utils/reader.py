@@ -3,7 +3,7 @@
 
 import json
 label2idx = {"Instantiation":0,"Synchrony":1,"Pragmatic cause":2,"List":3,"Asynchronous":4,"Restatement":5,"Concession":6,"Conjunction":7,"Cause":8,"Alternative":9,"Contrast":10, "Other":11}
-
+pos2idx = {"PRP$":0,"VBG":1,"VBD":2,"VB":3,",":4,"''":5,"VBP":6,"VBN":7,"JJ":8,"WP":9,"VBZ":10,"DT":11,"#":12,"RP":13,"$":14,"NN":15,"FW":16,"POS":17,".":18,"TO":19,"PRP":20,"RB":21,"-LRB-":22,":":23,"NNS":24,"NNP":25,"``":26,"WRB":27,"CC":28,"LS":29,"PDT":30,"RBS":31,"RBR":32,"CD":33,"EX":34,"IN":35,"WP$":36,"MD":37,"NNPS":38,"-RRB-":39,"JJS":40,"JJR":41,"UH":42,"WDT":43}
 def set_vocab(file, vocab_size):
     vocab_dict = {}
     f = open(file, "r")
@@ -35,7 +35,7 @@ def get_labels(label_seg):
         labels.add(label.split(".")[-1])
     return labels
 
-def get_discourse(jsn, r, maxlen, train=False):
+def get_discourse(jsn, r, maxlen, train=False, get_pos=False):
     """
     return a list containint a pair where the first
     element is a pair of two subsentences and the 
@@ -44,21 +44,34 @@ def get_discourse(jsn, r, maxlen, train=False):
     """
     words1 = get_words(None, tmp = jsn["Arg1"]["Lemma"])
     words2 = get_words(None, tmp = jsn["Arg2"]["Lemma"])
+    pos1 = get_words(None, tmp=jsn["Arg1"]["POS"])
+    pos2 = get_words(None, tmp=jsn["Arg2"]["POS"])
     idx1 = []
     idx2 = []
+    idx1_pos = []
+    idx2_pos = []
     for word in words1:
         idx1.append(r.word2idx(word))
-    if len(idx1) > maxlen:
-        print len(idx1)
+    for pos in pos1:
+        idx1_pos.append(pos2idx.get(pos, 12))
+    # if len(idx1) > maxlen:
+    #     print len(idx1)
     while len(idx1) < maxlen:
         idx1.append(0)
+    while len(idx1_pos) < maxlen:
+        idx1_pos.append(0)
     for word in words2:
         idx2.append(r.word2idx(word))
-    if len(idx2) > maxlen:
-        print len(idx2)
+    for pos in pos2:
+        idx2_pos.append(pos2idx.get(pos, 12))
+    # if len(idx2) > maxlen:
+    #     print len(idx2)
     while len(idx2) < maxlen:
         idx2.append(0)
+    while len(idx2_pos) < maxlen:
+        idx2_pos.append(0)
     i = [idx1, idx2]
+    p = [idx1_pos, idx2_pos]
     labels = []
     if jsn["Type"] == "Implicit":
         for label in jsn["Sense"]:
@@ -69,14 +82,20 @@ def get_discourse(jsn, r, maxlen, train=False):
         o = [0]*12
         for label_idx in labels:
             o[label_idx] = 1
-        io = [i, o]
+        if get_pos:
+            io = [i, o, p]
+        else:
+            io = [i, o]
         return io
     else:
         io_list = []
         for label_idx in labels:
             o = [0] * 12
             o[label_idx] = 1
-            io = [i, o]
+            if get_pos:
+                io = [i, o, p]
+            else:
+                io = [i, o]
             io_list.append(io)
         return io_list
 
@@ -170,7 +189,7 @@ class Reader(object):
         line = f.readline()
         while line != "":
             jsn = json.loads(line)
-            gd = get_discourse(jsn, self.vocab, self.ml, train=True)
+            gd = get_discourse(jsn, self.vocab, self.ml, train=True, get_pos=True)
             for item in gd:
                 self.train.append(item)
             line = f.readline()
@@ -183,7 +202,7 @@ class Reader(object):
         while line != "":
             jsn = json.loads(line)
             idl = jsn["ID"]
-            gd = get_discourse(jsn, self.vocab, self.ml)
+            gd = get_discourse(jsn, self.vocab, self.ml, get_pos=True)
             if get_id:
                 self.valid.append((idl, gd))
             else:
